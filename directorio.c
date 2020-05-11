@@ -52,7 +52,7 @@ void agregarMonitor()
     listaMonit[tamm].id, mon.id;
     strcpy(listaMonit[tamm].nombre, mon.nombre);
     listaMonit[tamm].proceso = mon.proceso;
-    strcpy( listaMonit[tamm].pipe, mon.pipe);
+    strcpy(listaMonit[tamm].pipe, mon.pipe);
     tamm++;
     close(fd);
     printf("El monitor %s fue agregado \n", listaMonit[tamm - 1].nombre);
@@ -86,7 +86,7 @@ void mandarPipeMonitor()
     int fd;
     char nombrePmoni[20];
     strcpy(nombrePmoni, listaMonit[pos].pipe);
-    printf("mando nombre para la comunicacion Sensore-monitor: %s....\n",listaMonit[pos].pipe);
+    printf("mando nombre para la comunicacion Sensore-monitor: %s....\n", listaMonit[pos].pipe);
     do
     {
         fd = open(PipeDirectorio2, O_WRONLY);
@@ -182,7 +182,7 @@ int main(int argc, char **argv)
 
             if (tamm != 0)
             {
-                if (kill(listaSen[tams-1].proceso, SIGUSR1) == -1)
+                if (kill(listaSen[tams - 1].proceso, SIGUSR1) == -1)
                 {
                     perror("NO SE PUDO HACER EL KILL");
                 }
@@ -212,7 +212,7 @@ int main(int argc, char **argv)
             {
                 printf("Nombre:\t %s proceso:\t %d \n ", listaSen[i].nombre, listaSen[i].proceso);
             }
-             est = espera;
+            est = espera;
 
             break;
         case lmonitores:
@@ -220,31 +220,38 @@ int main(int argc, char **argv)
             {
                 printf("id:\n %d Nombre:\t %s proceso:\t %d\n", listaMonit[i].id, listaMonit[i].nombre, listaMonit[i].proceso);
             }
-             est = espera;
+            est = espera;
 
             break;
         case exchange:
-            pos++;
-            if (kill(listaMonit[pos-1].proceso, SIGUSR1) == -1)
+            if (pos + 1 >= tamm)
             {
-                perror("Error en el kill del monitor");
+                printf("no se puede hace el cambio no hay monitores disponibles");
             }
-            if(kill(listaMonit[pos].proceso,SIGUSR2) == -1)
+            else
             {
-                perror("Kill de camibio mal ");
-            }
-            for (i = 0; i < tams; i++)
-            {
-                if (kill(listaSen[i].proceso, SIGUSR1) == -1)
+                pos++;
+                if (kill(listaMonit[pos - 1].proceso, SIGUSR1) == -1)
                 {
-                    perror("NO SE PUDO HACER EL KILL PARA LOS SENSORES");
+                    perror("Error en el kill del monitor");
                 }
-                mandarPipeMonitor();
+                if (kill(listaMonit[pos].proceso, SIGUSR2) == -1)
+                {
+                    perror("Kill de camibio mal ");
+                }
+                for (i = 0; i < tams; i++)
+                {
+                    if (kill(listaSen[i].proceso, SIGUSR1) == -1)
+                    {
+                        perror("NO SE PUDO HACER EL KILL PARA LOS SENSORES");
+                    }
+                    mandarPipeMonitor();
+                }
             }
-             est = espera;
+            est = espera;
             break;
         case salir:
-        
+
             break;
         }
     }

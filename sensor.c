@@ -92,10 +92,7 @@ int main(int argc, char **argv)
     struct sensor sen;
     strcpy(sen.nombre, nombreSensor);
     sen.proceso = getpid();
-    if (Esrandom)
-    {
-        sen.valor = rand() % (0 + 99);
-    }
+
     /*pipe para mandar la indromacion de registro al directorio*/
 
     int entro = 0;
@@ -122,22 +119,28 @@ int main(int argc, char **argv)
 
     while (1)
     {
-        
+
         fdn = 0;
         if (strcmp(nomActual, " ") != 0)
         {
-            
+
+            fdn = open(nomActual, O_WRONLY);
+            do
+            {
                 fdn = open(nomActual, O_WRONLY);
-                do
-                {
-                    fdn = open(nomActual, O_WRONLY);
-                } while (fdn == -1);
+            } while (fdn == -1);
 
-                write(fdn, &sen, sizeof(sen));
+            write(fdn, &sen, sizeof(sen));
 
-                close(fdn);
-                sleep(seg);
+            close(fdn);
+            sleep(seg);
+            if (Esrandom)
+            {
                 sen.valor = rand() % (0 + 99);
+            }else
+            {
+                sen.valor = valor;
+            }
             
         }
     }
