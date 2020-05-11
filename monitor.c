@@ -84,6 +84,7 @@ int main(int argc, char **argv)
     mon.proceso = getpid();
     mon.id = id;
     strcpy(mon.pipe, PipeSensores);
+
     printf("nombre pipe :%s\n", mon.pipe);
     do
     {
@@ -104,13 +105,11 @@ int main(int argc, char **argv)
     {
         pause();
     }
-    printf("nombre pipeSensores:%s \n", PipeSensores);
     printf("sale de la espera\n");
 
     fd = 0;
     while (es)
     {
-
         escribir();
     }
 }

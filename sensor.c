@@ -21,7 +21,9 @@ int Esrandom = 0;
 int i;
 int bytes = 0;
 struct monitor mon;
+int activo = 1;
 /***************************/
+
 void leerNombreActual()
 {
     /*pipe que recibe el nombre para la comunicacion con el monitor */
@@ -43,10 +45,14 @@ sighandler_t signalHandler(void)
 {
     leerNombreActual();
 }
-
+sighandler_t signalHandler2(void)
+{
+    activo = 0;
+}
 int main(int argc, char **argv)
 {
     signal(SIGUSR1, (sighandler_t)signalHandler);
+    signal(SIGUSR2, (sighandler_t)signalHandler2);
     if (argc < 9)
     {
         printf("Error, numero valores incompletos");
@@ -92,9 +98,8 @@ int main(int argc, char **argv)
     struct sensor sen;
     strcpy(sen.nombre, nombreSensor);
     sen.proceso = getpid();
-
     /*pipe para mandar la indromacion de registro al directorio*/
-
+    
     int entro = 0;
     do
     {
@@ -117,13 +122,19 @@ int main(int argc, char **argv)
 
     /*se manda la informacion al monitor*/
 
-    while (1)
+    while (activo)
     {
 
         fdn = 0;
         if (strcmp(nomActual, " ") != 0)
         {
-
+             if (Esrandom)
+            {
+                sen.valor = rand() % (0 + 99);
+            }else
+            {
+                sen.valor = valor;
+            }
             fdn = open(nomActual, O_WRONLY);
             do
             {
@@ -134,13 +145,7 @@ int main(int argc, char **argv)
 
             close(fdn);
             sleep(seg);
-            if (Esrandom)
-            {
-                sen.valor = rand() % (0 + 99);
-            }else
-            {
-                sen.valor = valor;
-            }
+           
             
         }
     }

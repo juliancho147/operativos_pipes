@@ -35,6 +35,7 @@ enum estados
 /*****************************/
 
 /*****************************/
+
 void agregarMonitor()
 {
     struct monitor mon;
@@ -129,7 +130,6 @@ int main(int argc, char **argv)
             printf("Pipe que manda el nombre del monitor a los sensores : %s \n", PipeDirectorio2);
         }
     }
-    /* signal(SIGUSR1,(sighandler_t) signalHandlerSensor);*/
 
     mkfifo(PipeDirectorio1, fifo_mode);
     mkfifo(PipeDirectorio2, fifo_mode);
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
             printf("\nPara listar hacer cambio de monitor oprime x");
             printf("\nPara terminar la ejecicon del programa oprime q \n");
             scanf("%c", &letra);
-            printf("%c\n", letra);
+
             if (letra == 'o')
             {
                 est = aMonitor;
@@ -231,20 +231,25 @@ int main(int argc, char **argv)
             else
             {
                 pos++;
+                /*Se manda la seña al monitor qu esta en uso, y que haora va a dejar de ser usado*/
                 if (kill(listaMonit[pos - 1].proceso, SIGUSR1) == -1)
                 {
                     perror("Error en el kill del monitor");
                 }
+                /*se manda al siguiente monitor que salga del pause*/
                 if (kill(listaMonit[pos].proceso, SIGUSR2) == -1)
                 {
                     perror("Kill de camibio mal ");
                 }
                 for (i = 0; i < tams; i++)
                 {
+                    printf("mandando señal a %d\n", listaSen[i].proceso);
+                    sleep(1);
                     if (kill(listaSen[i].proceso, SIGUSR1) == -1)
                     {
                         perror("NO SE PUDO HACER EL KILL PARA LOS SENSORES");
                     }
+                    sleep(1);
                     mandarPipeMonitor();
                 }
             }
@@ -252,9 +257,33 @@ int main(int argc, char **argv)
             break;
         case salir:
 
+            printf("xxxxx");
+
+            termina = 1;
             break;
         }
     }
+    for (i = 0; i < tams; i++)
+    {
+        sleep(1);
+        printf("matando proceso %d\n", listaSen[i].proceso);
+        if (kill(listaSen[i].proceso, SIGUSR2) == -1)
+        {
+            perror("NO SE PUDO HACER EL KILL PARA LOS SENSOR,EL PROCESO YA NO ESTA");
+        }
+    }
+    sleep(1);
+    for (i = pos; i < tamm; i++)
+    {
+        sleep(1);
+        printf("matando monitor %d\n", listaMonit[i].proceso);
+        if (kill(listaMonit[i].proceso, SIGUSR1) == -1)
+        {
+            perror("NO SE PUDO HACER EL KILL PARA EL MONITOR, EL PROCESO YA NO ESTA ");
+        }
+    }
+    sleep(1);
+    
     unlink(PipeSensores1);
     unlink(PipeDirectorio1);
     unlink(PipeDirectorio2);
