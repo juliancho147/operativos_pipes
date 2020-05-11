@@ -1,17 +1,18 @@
 struct sensor
 {
   
-    char nombre[20];
+    char nombre[30];
     int  valor;
     int proceso;
     
 };
 struct monitor
 {
-    char nombre[20];
+     char pipe[30];
+    char nombre[30];
     int proceso;
     int id ;
-    char pipe[20];
+   
 };
 struct directorio
 {

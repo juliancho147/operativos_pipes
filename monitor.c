@@ -8,22 +8,46 @@
 #include "structsSen.h"
 #include <unistd.h>
 #include <signal.h>
+/***********variables************/
 int es = 1;
+char *PipeDirectorio;
+char PipeSensores[30];
+char *nombreMonitor;
+char *idc;
+int id;
+int i;
+mode_t fifo_mode = S_IRUSR | S_IWUSR;
+int bytes = 0;
+struct sensor s;
+int fd;
+struct monitor mon;
+
+/**********************/
+void escribir()
+{
+    int fdc = open(PipeSensores, O_RDONLY);
+    read(fdc, &s, sizeof(s));
+    close(fdc);
+    printf("%s-%d.\n", s.nombre, s.valor);
+}
 
 typedef void (*sighandler_t)(int);
 sighandler_t signalHandler(void)
 {
+    es = 0;
+    printf("señal\n");
 }
+sighandler_t signalHandler2(void)
+{
+    printf("señal de inicio\n");
+}
+
 int main(int argc, char **argv)
 {
 
-    char *PipeDirectorio;
-    char *PipeSensores;
-    char *nombreMonitor;
-    char *idc;
-    int id;
-    int i;
     signal(SIGUSR1, (sighandler_t)signalHandler);
+    signal(SIGUSR2, (sighandler_t)signalHandler2);
+
     if (argc != 9)
     {
         printf("Error, numero de valores incompletos");
@@ -36,53 +60,57 @@ int main(int argc, char **argv)
         {
 
             PipeDirectorio = argv[i + 1];
-            printf("%s ", PipeDirectorio);
         }
         else if (strcmp(argv[i], "-p") == 0)
         {
-            PipeSensores = argv[i + 1];
-            printf("%s ", PipeSensores);
+
+            strcpy(PipeSensores, argv[i + 1]);
         }
         else if (strcmp(argv[i], "-n") == 0)
         {
             nombreMonitor = argv[i + 1];
-            printf("%s ", nombreMonitor);
         }
         else if (strcmp(argv[i], "-i") == 0)
         {
             idc = argv[i + 1];
             id = atoi(idc);
-            printf("%d ", id);
         }
     }
     /**pipe para mandar la informacion al directorio**/
-    int fd;
-    struct monitor mon;
+    unlink(PipeSensores);
+    mkfifo(PipeSensores, fifo_mode);
+
     strcpy(mon.nombre, nombreMonitor);
     mon.proceso = getpid();
     mon.id = id;
     strcpy(mon.pipe, PipeSensores);
+    printf("nombre pipe :%s\n", mon.pipe);
     do
     {
         fd = open(PipeDirectorio, O_WRONLY);
         if (fd == -1)
         {
             printf("Esperando que el pipe sea creado \n");
+            sleep(1);
         }
     } while (fd == -1);
-    write(fd, &mon, sizeof(struct monitor));
+    printf("nombre pipe :%s\n", mon.pipe);
+    write(fd, &mon, sizeof(mon));
 
     close(fd);
+    printf("registro en el directorio completo\n");
     /*pipe para imprimir el valor de los sensores*/
-    if( id != 0)
+    if (id != 0)
+    {
+        pause();
+    }
+    printf("nombre pipeSensores:%s \n", PipeSensores);
+    printf("sale de la espera\n");
+
+    fd = 0;
     while (es)
     {
-        fd = 
-        do
-        {
-            /* code */
-        } while (/* condition */);
-        
+
+        escribir();
     }
-    
 }

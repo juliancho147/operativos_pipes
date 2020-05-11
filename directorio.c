@@ -52,9 +52,11 @@ void agregarMonitor()
     listaMonit[tamm].id, mon.id;
     strcpy(listaMonit[tamm].nombre, mon.nombre);
     listaMonit[tamm].proceso = mon.proceso;
+    strcpy( listaMonit[tamm].pipe, mon.pipe);
     tamm++;
     close(fd);
     printf("El monitor %s fue agregado \n", listaMonit[tamm - 1].nombre);
+    printf("con nombre de  %s fue agregado \n", listaMonit[tamm - 1].pipe);
 }
 void agregarSensor()
 {
@@ -84,6 +86,7 @@ void mandarPipeMonitor()
     int fd;
     char nombrePmoni[20];
     strcpy(nombrePmoni, listaMonit[pos].pipe);
+    printf("mando nombre para la comunicacion Sensore-monitor: %s....\n",listaMonit[pos].pipe);
     do
     {
         fd = open(PipeDirectorio2, O_WRONLY);
@@ -93,7 +96,8 @@ void mandarPipeMonitor()
         }
     } while (fd == -1);
     /*se le manda el nombre del pipe para que se comuniquen*/
-    write(fd, &nombrePmoni, sizeof(nombrePmoni));
+    write(fd, &listaMonit[pos], sizeof(listaMonit[i]));
+    printf("pipe de comunicacion Sensor-Monitor mandado\n");
     close(fd);
 }
 
@@ -135,6 +139,7 @@ int main(int argc, char **argv)
     int termina = 0;
     while (!termina)
     {
+
         switch (est)
         {
         case espera:
@@ -145,6 +150,7 @@ int main(int argc, char **argv)
             printf("\nPara listar hacer cambio de monitor oprime x");
             printf("\nPara terminar la ejecicon del programa oprime q \n");
             scanf("%c", &letra);
+            printf("%c\n", letra);
             if (letra == 'o')
             {
                 est = aMonitor;
@@ -170,13 +176,18 @@ int main(int argc, char **argv)
                 termina = 1;
                 est = salir;
             }
-
             break;
         case aSensor:
             agregarSensor();
+
             if (tamm != 0)
             {
-                mandarPipeMonitor();
+                if (kill(listaSen[tams-1].proceso, SIGUSR1) == -1)
+                {
+                    perror("NO SE PUDO HACER EL KILL");
+                }
+                else
+                    mandarPipeMonitor();
             }
             est = espera;
             break;
@@ -184,13 +195,14 @@ int main(int argc, char **argv)
             agregarMonitor();
             if (tamm == 1)
             {
-                for (i = 0; i < tams ; i++)
+                for (i = 0; i < tams; i++)
                 {
                     if (kill(listaSen[i].proceso, SIGUSR1) == -1)
                     {
                         perror("NO SE PUDO HACER EL KILL");
                     }
-                    mandarPipeMonitor();
+                    else
+                        mandarPipeMonitor();
                 }
             }
             est = espera;
@@ -200,6 +212,7 @@ int main(int argc, char **argv)
             {
                 printf("Nombre:\t %s proceso:\t %d \n ", listaSen[i].nombre, listaSen[i].proceso);
             }
+             est = espera;
 
             break;
         case lmonitores:
@@ -207,15 +220,20 @@ int main(int argc, char **argv)
             {
                 printf("id:\n %d Nombre:\t %s proceso:\t %d\n", listaMonit[i].id, listaMonit[i].nombre, listaMonit[i].proceso);
             }
+             est = espera;
 
             break;
         case exchange:
             pos++;
-            if (kill(listaMonit[pos].proceso, SIGUSR1) == -1)
+            if (kill(listaMonit[pos-1].proceso, SIGUSR1) == -1)
             {
                 perror("Error en el kill del monitor");
             }
-            for (i = 0; i < tams ; i++)
+            if(kill(listaMonit[pos].proceso,SIGUSR2) == -1)
+            {
+                perror("Kill de camibio mal ");
+            }
+            for (i = 0; i < tams; i++)
             {
                 if (kill(listaSen[i].proceso, SIGUSR1) == -1)
                 {
@@ -223,9 +241,10 @@ int main(int argc, char **argv)
                 }
                 mandarPipeMonitor();
             }
-
+             est = espera;
             break;
         case salir:
+        
             break;
         }
     }

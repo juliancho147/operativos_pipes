@@ -8,9 +8,9 @@
 #include "structsSen.h"
 #include <unistd.h>
 #include <signal.h>
-#include<time.h>
+#include <time.h>
 /**variables***/
-char nomActual[20];
+char nomActual[30] = "NULL";
 int fdn = 0;
 char *PipeSensores1;
 char *PipeDirectorio2;
@@ -20,20 +20,23 @@ int seg;
 int Esrandom = 0;
 int i;
 int bytes = 0;
-
+struct monitor mon;
 /***************************/
 void leerNombreActual()
 {
     /*pipe que recibe el nombre para la comunicacion con el monitor */
-
+    bytes = 0;
     fdn = open(PipeDirectorio2, O_RDONLY);
     do
     {
-        if ((bytes = read(fdn, nomActual, sizeof(nomActual))) > 0)
+        if ((bytes = read(fdn, &mon, sizeof(mon))) > 0)
         {
             printf("leyendo nombre del pipe de comunicacion con el monitor \n");
         }
     } while (bytes > 0);
+    close(fdn);
+    strcpy(nomActual, mon.pipe);
+    printf("nombre de comunicacion %s \n", nomActual);
 }
 typedef void (*sighandler_t)(int);
 sighandler_t signalHandler(void)
@@ -116,18 +119,26 @@ int main(int argc, char **argv)
     printf("registo completado\n");
 
     /*se manda la informacion al monitor*/
+
     while (1)
     {
-        fdn = open(nomActual, O_WRONLY);
-        do
+        
+        fdn = 0;
+        if (strcmp(nomActual, " ") != 0)
         {
-            fdn = open(nomActual, O_WRONLY);
-        } while (fdn == -1);
+            
+                fdn = open(nomActual, O_WRONLY);
+                do
+                {
+                    fdn = open(nomActual, O_WRONLY);
+                } while (fdn == -1);
 
-        write(fdn, &sen, sizeof(sen));
-    
-        close(fdn);
-        sleep(sen.valor);
-        sen.valor = rand()% (0 + 99);
+                write(fdn, &sen, sizeof(sen));
+
+                close(fdn);
+                sleep(seg);
+                sen.valor = rand() % (0 + 99);
+            
+        }
     }
 }
