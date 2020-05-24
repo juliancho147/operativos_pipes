@@ -1,3 +1,5 @@
+/*Desarrollado por Julian Builes y Santiago Bremudez
+Sistemas operativos 1-2020 Pryecto 2*/
 #include <string.h>
 #include <signal.h>
 #include <stdio.h>
@@ -21,11 +23,9 @@ int pos = 0;
 mode_t fifo_mode = S_IRUSR | S_IWUSR;
 
 /****************************************/
-enum estados
+enum estados /**perimte entender mejor los estados */
 {
     espera,
-    aSensor,
-    aMonitor,
     lsensores,
     lmonitores,
     exchange,
@@ -35,7 +35,6 @@ enum estados
 /*****************************/
 
 /*****************************/
-
 
 void agregarMonitor()
 {
@@ -51,14 +50,14 @@ void agregarMonitor()
             printf("leyendo monitor\n");
         }
     } while (byetes > 0);
-    listaMonit[tamm].id, mon.id;
+    listaMonit[tamm].id = mon.id;
     strcpy(listaMonit[tamm].nombre, mon.nombre);
     listaMonit[tamm].proceso = mon.proceso;
     strcpy(listaMonit[tamm].pipe, mon.pipe);
     tamm++;
     close(fd);
     printf("El monitor %s fue agregado \n", listaMonit[tamm - 1].nombre);
-    printf("con nombre de  %s fue agregado \n", listaMonit[tamm - 1].pipe);
+    printf("Con nombre del pipe de comunicacion:  %s fue agregado \n", listaMonit[tamm - 1].pipe);
 }
 void agregarSensor()
 {
@@ -82,7 +81,6 @@ void agregarSensor()
     close(fd1);
     printf("el sensor %s fue agregado \n", listaSen[tams - 1].nombre);
 }
-
 
 /*se manda el nombre del pipe para que el sensor se comunique con el monitor*/
 void mandarPipeMonitor()
@@ -111,43 +109,41 @@ void iniciarS2();
 sighandler_t signalHandler(void)
 {
     agregarMonitor();
-            if (tamm == 1)
+    if (tamm == 1)
+    {
+        for (i = 0; i < tams; i++)
+        {
+            if (kill(listaSen[i].proceso, SIGUSR1) == -1)
             {
-                for (i = 0; i < tams; i++)
-                {
-                    if (kill(listaSen[i].proceso, SIGUSR1) == -1)
-                    {
-                        perror("NO SE PUDO HACER EL KILL");
-                    }
-                    else
-                        mandarPipeMonitor();
-                }
+                perror("NO SE PUDO HACER EL KILL");
             }
-     iniciarS1();
+            else
+                mandarPipeMonitor();
+        }
+    }
+    iniciarS1();
 }
 sighandler_t signalHandler2(void)
 {
     agregarSensor();
     if (tamm != 0)
-            {
-                if (kill(listaSen[tams - 1].proceso, SIGUSR1) == -1)
-                {
-                    perror("NO SE PUDO HACER EL KILL");
-                }
-                else
-                    mandarPipeMonitor();
-            }
+    {
+        if (kill(listaSen[tams - 1].proceso, SIGUSR1) == -1)
+        {
+            perror("NO SE PUDO HACER EL KILL");
+        }
+        else
+            mandarPipeMonitor();
+    }
     iniciarS2();
 }
 void iniciarS1()
 {
     signal(SIGUSR1, (sighandler_t)signalHandler);
-    
 }
 void iniciarS2()
 {
-   signal(SIGUSR2, (sighandler_t)signalHandler2);
-    
+    signal(SIGUSR2, (sighandler_t)signalHandler2);
 }
 int main(int argc, char **argv)
 {
@@ -162,7 +158,7 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    for (i = 0; i < argc; i++)
+    for (i = 0; i < argc; i++) /**guarda los datos para la comunicacion**/
     {
         if (strcmp(argv[i], "-m") == 0)
         {
@@ -191,29 +187,28 @@ int main(int argc, char **argv)
     /**************se guarda el pid del monitor en un fichero*****************/
     int pid = getpid();
     printf("pid es: %d\n", pid);
-    int  fl = open("pidMonitor.txt",O_WRONLY);
-    if(fl == -1)
+    int fl = open("pidMonitor.txt", O_WRONLY);
+    if (fl == -1)
     {
         printf("Error no se encuentra el archivo\n");
     }
-    write(fl, &pid,sizeof(pid));
+    write(fl, &pid, sizeof(pid));
     close(fl);
 
-	/******************************************/
+    /******************************************/
     while (!termina)
     {
 
         switch (est)
         {
         case espera:
-           
+
             printf("\nPara listar los sensosres oprime la s");
             printf("\nPara listar los monitores oprome m");
             printf("\nPara listar hacer cambio de monitor oprime x");
             printf("\nPara terminar la ejecicon del programa oprime q \n");
             scanf("%c", &letra);
 
-            
             if (letra == 's')
             {
                 est = lsensores;
@@ -235,7 +230,7 @@ int main(int argc, char **argv)
         case lsensores:
             for (i = 0; i < tams; i++)
             {
-                printf("Nombre:\t %s proceso:\t %d \n ", listaSen[i].nombre, listaSen[i].proceso);
+                printf("Nombre sensor: %s proceso:\t%d \n", listaSen[i].nombre, listaSen[i].proceso);
             }
             est = espera;
 
@@ -243,7 +238,7 @@ int main(int argc, char **argv)
         case lmonitores:
             for (i = pos; i < tamm; i++)
             {
-                printf("id:%d Nombre:\t%s proceso:\t%d\n", listaMonit[i].id, listaMonit[i].nombre, listaMonit[i].proceso);
+                printf("id:%d Nombre monitor:\t%s proceso:\t%d\n", listaMonit[i].id, listaMonit[i].nombre, listaMonit[i].proceso);
             }
             est = espera;
 
@@ -256,7 +251,7 @@ int main(int argc, char **argv)
             else
             {
                 pos++;
-                /*Se manda la seña al monitor qu esta en uso, y que haora va a dejar de ser usado*/
+                /*Se manda la seña al monitor qu esta en uso, y que  va a dejar de ser usado*/
                 if (kill(listaMonit[pos - 1].proceso, SIGUSR1) == -1)
                 {
                     perror("Error en el kill del monitor");
@@ -288,7 +283,7 @@ int main(int argc, char **argv)
             break;
         }
     }
-    for (i = 0; i < tams; i++)
+    for (i = 0; i < tams; i++) /**se matan todos los sensores*/
     {
         sleep(1);
         printf("matando proceso %d\n", listaSen[i].proceso);
@@ -298,7 +293,7 @@ int main(int argc, char **argv)
         }
     }
     sleep(1);
-    for (i = pos; i < tamm; i++)
+    for (i = pos; i < tamm; i++) /*se matan  todos los monitores*/
     {
         sleep(1);
         printf("matando monitor %d\n", listaMonit[i].proceso);
@@ -308,9 +303,18 @@ int main(int argc, char **argv)
         }
     }
     sleep(1);
-    
-    unlink(PipeSensores1);
-    unlink(PipeDirectorio1);
-    unlink(PipeDirectorio2);
 
+    if (unlink(PipeSensores1) == -1)
+    {
+        perror("Erro al eliminar el PipeSensores1\n");
+    }
+    if (unlink(PipeDirectorio1) == -1)
+    {
+        perror("Error al eliminar el PipeDirectorio2\n");
+    }
+
+    if (unlink(PipeDirectorio2) == -1)
+    {
+        perror("Error al eliminar el pipe PipeDirectorio2\n");
+    }
 }

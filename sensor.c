@@ -1,3 +1,5 @@
+/*Desarrollado por Julian Builes y Santiago Bremudez
+Sistemas operativos 1-2020 Pryecto 2*/
 #include <string.h>
 #include <signal.h>
 #include <stdio.h>
@@ -43,11 +45,14 @@ void leerNombreActual()
 typedef void (*sighandler_t)(int);
 sighandler_t signalHandler(void)
 {
+    printf("Señal de cambio de monitor\n");
     leerNombreActual();
 }
 sighandler_t signalHandler2(void)
 {
+    printf("Señal para terminar\n");
     activo = 0;
+    return EXIT_SUCCESS;
 }
 int main(int argc, char **argv)
 {
@@ -93,21 +98,23 @@ int main(int argc, char **argv)
             printf("Tiempo entre los valores genrados: %d\n ", seg);
         }
     }
-    /*************************/
-    int pid=0;
-    int  fl = open("pidMonitor.txt",O_RDONLY);
-    if(fl == -1)
+    /************se lee el fichero que contiene el nombre del pid del directorio*************/
+    int pid = 0;
+    int fl = open("pidMonitor.txt", O_RDONLY);
+    if (fl == -1)
     {
         printf("Error no se encuentra el archivo\n");
+        return EXIT_FAILURE;
     }
-    int b = read(fl, &pid,sizeof(pid));
-    printf("los bytes son %d\n",b );
+    int b = read(fl, &pid, sizeof(pid));
+    printf("los bytes son %d\n", b);
     printf("el pid directorio es %d\n", pid);
     close(fl);
-    /******************************/
+    /*************se le manda al direcotrio una señal el cual va permitir registrar el sensor*****************/
     if (kill(pid, SIGUSR2) == -1)
     {
         perror("NO SE PUDO HACER EL KILL PARA EL REGISTRO");
+        return EXIT_FAILURE;
     }
     srand(time(NULL));
     int fd1;
@@ -115,7 +122,7 @@ int main(int argc, char **argv)
     strcpy(sen.nombre, nombreSensor);
     sen.proceso = getpid();
     /*pipe para mandar la indromacion de registro al directorio*/
-    
+
     int entro = 0;
     do
     {
@@ -144,10 +151,11 @@ int main(int argc, char **argv)
         fdn = 0;
         if (strcmp(nomActual, " ") != 0)
         {
-             if (Esrandom)
+            if (Esrandom)
             {
                 sen.valor = rand() % (0 + 99);
-            }else
+            }
+            else
             {
                 sen.valor = valor;
             }
@@ -161,8 +169,9 @@ int main(int argc, char **argv)
 
             close(fdn);
             sleep(seg);
-           
-            
         }
+        else
+            printf("esperando monitor\n");
     }
+    return EXIT_SUCCESS;
 }
