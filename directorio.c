@@ -36,6 +36,7 @@ enum estados
 
 /*****************************/
 
+
 void agregarMonitor()
 {
     struct monitor mon;
@@ -81,6 +82,8 @@ void agregarSensor()
     close(fd1);
     printf("el sensor %s fue agregado \n", listaSen[tams - 1].nombre);
 }
+
+
 /*se manda el nombre del pipe para que el sensor se comunique con el monitor*/
 void mandarPipeMonitor()
 {
@@ -101,9 +104,57 @@ void mandarPipeMonitor()
     printf("pipe de comunicacion Sensor-Monitor mandado\n");
     close(fd);
 }
+typedef void (*sighandler_t)(int);
+void iniciarS1();
+void iniciarS2();
 
+sighandler_t signalHandler(void)
+{
+    agregarMonitor();
+            if (tamm == 1)
+            {
+                for (i = 0; i < tams; i++)
+                {
+                    if (kill(listaSen[i].proceso, SIGUSR1) == -1)
+                    {
+                        perror("NO SE PUDO HACER EL KILL");
+                    }
+                    else
+                        mandarPipeMonitor();
+                }
+            }
+     iniciarS1();
+}
+sighandler_t signalHandler2(void)
+{
+    agregarSensor();
+    if (tamm != 0)
+            {
+                if (kill(listaSen[tams - 1].proceso, SIGUSR1) == -1)
+                {
+                    perror("NO SE PUDO HACER EL KILL");
+                }
+                else
+                    mandarPipeMonitor();
+            }
+    iniciarS2();
+}
+void iniciarS1()
+{
+    signal(SIGUSR1, (sighandler_t)signalHandler);
+    
+}
+void iniciarS2()
+{
+   signal(SIGUSR2, (sighandler_t)signalHandler2);
+    
+}
 int main(int argc, char **argv)
 {
+    /*signal(SIGUSR1, (sighandler_t)signalHandler);
+    signal(SIGUSR2, (sighandler_t)signalHandler2);*/
+    iniciarS1();
+    iniciarS2();
 
     if (argc != 7)
     {
@@ -137,29 +188,33 @@ int main(int argc, char **argv)
     enum estados est = espera;
     char letra;
     int termina = 0;
+    /**************se guarda el pid del monitor en un fichero*****************/
+    int pid = getpid();
+    printf("pid es: %d\n", pid);
+    int  fl = open("pidMonitor.txt",O_WRONLY);
+    if(fl == -1)
+    {
+        printf("Error no se encuentra el archivo\n");
+    }
+    write(fl, &pid,sizeof(pid));
+    close(fl);
+
+	/******************************************/
     while (!termina)
     {
 
         switch (est)
         {
         case espera:
-            printf("manual: \nPara agregar una monitor escribre la letra o");
-            printf("\nPara agregar un sensor oprime la letra e");
+           
             printf("\nPara listar los sensosres oprime la s");
             printf("\nPara listar los monitores oprome m");
             printf("\nPara listar hacer cambio de monitor oprime x");
             printf("\nPara terminar la ejecicon del programa oprime q \n");
             scanf("%c", &letra);
 
-            if (letra == 'o')
-            {
-                est = aMonitor;
-            }
-            else if (letra == 'e')
-            {
-                est = aSensor;
-            }
-            else if (letra == 's')
+            
+            if (letra == 's')
             {
                 est = lsensores;
             }
@@ -177,36 +232,6 @@ int main(int argc, char **argv)
                 est = salir;
             }
             break;
-        case aSensor:
-            agregarSensor();
-
-            if (tamm != 0)
-            {
-                if (kill(listaSen[tams - 1].proceso, SIGUSR1) == -1)
-                {
-                    perror("NO SE PUDO HACER EL KILL");
-                }
-                else
-                    mandarPipeMonitor();
-            }
-            est = espera;
-            break;
-        case aMonitor:
-            agregarMonitor();
-            if (tamm == 1)
-            {
-                for (i = 0; i < tams; i++)
-                {
-                    if (kill(listaSen[i].proceso, SIGUSR1) == -1)
-                    {
-                        perror("NO SE PUDO HACER EL KILL");
-                    }
-                    else
-                        mandarPipeMonitor();
-                }
-            }
-            est = espera;
-            break;
         case lsensores:
             for (i = 0; i < tams; i++)
             {
@@ -218,7 +243,7 @@ int main(int argc, char **argv)
         case lmonitores:
             for (i = pos; i < tamm; i++)
             {
-                printf("id:\n %d Nombre:\t %s proceso:\t %d\n", listaMonit[i].id, listaMonit[i].nombre, listaMonit[i].proceso);
+                printf("id:%d Nombre:\t%s proceso:\t%d\n", listaMonit[i].id, listaMonit[i].nombre, listaMonit[i].proceso);
             }
             est = espera;
 
@@ -287,4 +312,5 @@ int main(int argc, char **argv)
     unlink(PipeSensores1);
     unlink(PipeDirectorio1);
     unlink(PipeDirectorio2);
+
 }

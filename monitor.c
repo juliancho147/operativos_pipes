@@ -53,7 +53,7 @@ int main(int argc, char **argv)
         printf("Error, numero de valores incompletos");
         return -1;
     }
-
+    
     for (i = 0; i < argc; i++)
     {
         if (strcmp(argv[i], "-d") == 0)
@@ -84,7 +84,22 @@ int main(int argc, char **argv)
     mon.proceso = getpid();
     mon.id = id;
     strcpy(mon.pipe, PipeSensores);
-
+    /*************se guarda el pid del directorio***************/
+    int pid=0;
+    int  fl = open("pidMonitor.txt",O_RDONLY);
+    if(fl == -1)
+    {
+        printf("Error no se encuentra el archivo\n");
+    }
+    int b = read(fl, &pid,sizeof(pid));
+    printf("los bytes son %d\n",b );
+    printf("el pid directorio es %d\n", pid);
+    close(fl);
+    /************se manda una señal para el registro****************/
+    if (kill(pid, SIGUSR1) == -1)
+    {
+        perror("NO SE PUDO HACER EL KILL PARA EL REGISTRO");
+    }
     printf("nombre pipe :%s\n", mon.pipe);
     do
     {

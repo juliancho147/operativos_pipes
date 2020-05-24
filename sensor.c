@@ -93,6 +93,22 @@ int main(int argc, char **argv)
             printf("Tiempo entre los valores genrados: %d\n ", seg);
         }
     }
+    /*************************/
+    int pid=0;
+    int  fl = open("pidMonitor.txt",O_RDONLY);
+    if(fl == -1)
+    {
+        printf("Error no se encuentra el archivo\n");
+    }
+    int b = read(fl, &pid,sizeof(pid));
+    printf("los bytes son %d\n",b );
+    printf("el pid directorio es %d\n", pid);
+    close(fl);
+    /******************************/
+    if (kill(pid, SIGUSR2) == -1)
+    {
+        perror("NO SE PUDO HACER EL KILL PARA EL REGISTRO");
+    }
     srand(time(NULL));
     int fd1;
     struct sensor sen;
